@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>거래 내역 - USDT 지갑 서비스</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-wallet"></i>
+            <span>USDT 지갑</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-link">
+                <i class="fas fa-tachometer-alt"></i>
+                대시보드
+            </a>
+            <a href="wallet.html" class="nav-link">
+                <i class="fas fa-wallet"></i>
+                지갑
+            </a>
+            <a href="history.html" class="nav-link active">
+                <i class="fas fa-history"></i>
+                거래내역
+            </a>
+        </div>
+        <div class="nav-user">
+            <div class="user-info">
+                <span id="userEmail">사용자</span>
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    로그아웃
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 메인 컨테이너 -->
+    <div class="main-container">
+        <!-- 알림 메시지 -->
+        <div id="alert-container"></div>
+
+        <!-- 페이지 헤더 -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-history"></i>
+                거래 내역
+            </h1>
+            <p>모든 거래 기록을 확인하고 관리하세요</p>
+        </div>
+
+        <!-- 필터 섹션 -->
+        <div class="filters-section">
+            <div class="filter-header">
+                <h3>
+                    <i class="fas fa-filter"></i>
+                    필터 옵션
+                </h3>
+                <button class="btn btn-outline btn-sm" onclick="resetFilters()">
+                    <i class="fas fa-undo"></i>
+                    초기화
+                </button>
+            </div>
+            
+            <div class="filter-grid">
+                <div class="filter-item">
+                    <label class="form-label">거래 유형</label>
+                    <select id="filterType" class="form-select">
+                        <option value="">전체</option>
+                        <option value="TRANSFER_OUT">이체 보내기</option>
+                        <option value="TRANSFER_IN">이체 받기</option>
+                        <option value="WITHDRAWAL">출금</option>
+                        <option value="DEPOSIT">입금</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="form-label">자산</label>
+                    <select id="filterAsset" class="form-select">
+                        <option value="">전체</option>
+                        <option value="USDT">USDT</option>
+                        <option value="TRX">TRX</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="form-label">상태</label>
+                    <select id="filterStatus" class="form-select">
+                        <option value="">전체</option>
+                        <option value="PENDING">대기 중</option>
+                        <option value="COMPLETED">완료</option>
+                        <option value="FAILED">실패</option>
+                        <option value="CANCELLED">취소</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="form-label">날짜 범위</label>
+                    <select id="filterDateRange" class="form-select">
+                        <option value="">전체</option>
+                        <option value="today">오늘</option>
+                        <option value="week">최근 7일</option>
+                        <option value="month">최근 30일</option>
+                        <option value="3months">최근 3개월</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="form-label">검색</label>
+                    <input 
+                        type="text" 
+                        id="filterSearch" 
+                        class="form-input" 
+                        placeholder="거래 ID, 주소, 메모 검색"
+                    >
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        <i class="fas fa-search"></i>
+                        검색
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 거래 요약 -->
+        <div class="summary-section">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="summary-info">
+                        <h4>총 거래</h4>
+                        <span id="totalTransactions">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-icon income">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="summary-info">
+                        <h4>받은 금액</h4>
+                        <span id="totalIncome">0.00000000 USDT</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-icon expense">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="summary-info">
+                        <h4>보낸 금액</h4>
+                        <span id="totalExpense">0.00000000 USDT</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-icon pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="summary-info">
+                        <h4>대기 중</h4>
+                        <span id="pendingCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 거래 내역 테이블 -->
+        <div class="transactions-section">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-table"></i>
+                    거래 목록
+                </h3>
+                <div class="section-actions">
+                    <select id="pageSize" class="form-select-sm" onchange="changePageSize()">
+                        <option value="10">10개씩 보기</option>
+                        <option value="20" selected>20개씩 보기</option>
+                        <option value="50">50개씩 보기</option>
+                        <option value="100">100개씩 보기</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="exportTransactions()">
+                        <i class="fas fa-download"></i>
+                        내보내기
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="refreshTransactions()">
+                        <i class="fas fa-sync-alt"></i>
+                        새로고침
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortTable('created_at')">
+                                날짜/시간
+                                <i class="fas fa-sort"></i>
+                            </th>
+                            <th class="sortable" onclick="sortTable('type')">
+                                유형
+                                <i class="fas fa-sort"></i>
+                            </th>
+                            <th class="sortable" onclick="sortTable('amount')">
+                                금액
+                                <i class="fas fa-sort"></i>
+                            </th>
+                            <th>자산</th>
+                            <th class="sortable" onclick="sortTable('status')">
+                                상태
+                                <i class="fas fa-sort"></i>
+                            </th>
+                            <th>상대방/주소</th>
+                            <th>메모</th>
+                            <th>거래 ID</th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        <tr>
+                            <td colspan="9" class="loading-cell">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>거래 내역을 불러오는 중...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    <span id="paginationInfo">페이지 정보 로딩 중...</span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn-page" id="prevPage" onclick="changePage(-1)" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                        이전
+                    </button>
+                    <div id="pageNumbers" class="page-numbers">
+                        <!-- 페이지 번호 동적 생성 -->
+                    </div>
+                    <button class="btn-page" id="nextPage" onclick="changePage(1)" disabled>
+                        다음
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 거래 상세 모달 -->
+    <div id="transactionDetailModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    거래 상세 정보
+                </h3>
+                <button class="modal-close" onclick="closeModal('transactionDetailModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="transactionDetail" class="transaction-detail">
+                    <!-- 상세 정보 동적 생성 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('transactionDetailModal')">
+                    닫기
+                </button>
+                <button type="button" class="btn btn-primary" id="copyTransactionInfo" onclick="copyTransactionInfo()">
+                    <i class="fas fa-copy"></i>
+                    정보 복사
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 내보내기 모달 -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-download"></i>
+                    거래 내역 내보내기
+                </h3>
+                <button class="modal-close" onclick="closeModal('exportModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">내보내기 형식</label>
+                    <select id="exportFormat" class="form-select">
+                        <option value="csv">CSV (쉼표 구분)</option>
+                        <option value="excel">Excel (.xlsx)</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">날짜 범위</label>
+                    <div class="date-range">
+                        <input type="date" id="exportFromDate" class="form-input">
+                        <span>~</span>
+                        <input type="date" id="exportToDate" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">포함할 정보</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="includeBasic" checked disabled>
+                            <span>기본 정보 (날짜, 유형, 금액, 상태)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="includeDetails" checked>
+                            <span>상세 정보 (주소, 메모, 거래 ID)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="includeFees">
+                            <span>수수료 정보</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('exportModal')">
+                    취소
+                </button>
+                <button type="button" class="btn btn-primary" onclick="performExport()">
+                    <i class="fas fa-download"></i>
+                    내보내기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // 전역 변수
+        let currentPage = 1;
+        let pageSize = 20;
+        let totalPages = 1;
+        let totalItems = 0;
+        let currentSort = { field: 'created_at', direction: 'desc' };
+        let currentFilters = {};
+        let allTransactions = [];
+
+        // 페이지 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 인증 확인
+            if (!authManager.checkAuth()) {
+                return;
+            }
+            
+            // 거래 내역 페이지 초기화
+            initializeHistory();
+        });
+
+        /**
+         * 거래 내역 페이지 초기화
+         */
+        function initializeHistory() {
+            // 사용자 정보 표시
+            const userEmail = walletAPI.getUserEmail();
+            if (userEmail) {
+                document.getElementById('userEmail').textContent = userEmail;
+            }
+
+            // 초기 데이터 로드
+            loadTransactions();
+            
+            // 이벤트 리스너 등록
+            setupHistoryEvents();
+            
+            // 내보내기 날짜 기본값 설정
+            setDefaultExportDates();
+        }
+
+        /**
+         * 이벤트 설정
+         */
+        function setupHistoryEvents() {
+            // 검색 입력 디바운싱
+            document.getElementById('filterSearch').addEventListener('input', debounce(applyFilters, 500));
+            
+            // 엔터 키로 검색
+            document.getElementById('filterSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+        }
+
+        /**
+         * 거래 내역 로드
+         */
+        async function loadTransactions() {
+            const tbody = document.getElementById('transactionsTableBody');
+            
+            try {
+                // 로딩 표시
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="loading-cell">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>거래 내역을 불러오는 중...</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                // API 호출 매개변수 구성
+                const params = {
+                    skip: (currentPage - 1) * pageSize,
+                    limit: pageSize,
+                    ...currentFilters
+                };
+
+                const response = await walletAPI.getTransactions(params);
+                allTransactions = response.transactions || [];
+                totalItems = response.total || 0;
+                totalPages = Math.ceil(totalItems / pageSize);
+
+                // 테이블 업데이트
+                updateTransactionsTable();
+                
+                // 요약 정보 업데이트
+                updateSummary();
+                
+                // 페이지네이션 업데이트
+                updatePagination();
+                
+            } catch (error) {
+                console.error('거래 내역 로드 오류:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="error-cell">
+                            <div class="error-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>거래 내역을 불러오는데 실패했습니다</p>
+                                <button class="btn btn-primary btn-sm" onclick="loadTransactions()">
+                                    다시 시도
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        /**
+         * 거래 테이블 업데이트
+         */
+        function updateTransactionsTable() {
+            const tbody = document.getElementById('transactionsTableBody');
+            
+            if (allTransactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="empty-cell">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>거래 내역이 없습니다</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = allTransactions.map(tx => `
+                <tr class="transaction-row" onclick="showTransactionDetail(${tx.id})">
+                    <td class="date-cell">
+                        <div class="date-info">
+                            <span class="date">${formatDate(tx.created_at)}</span>
+                            <span class="time">${formatTime(tx.created_at)}</span>
+                        </div>
+                    </td>
+                    <td class="type-cell">
+                        <div class="transaction-type ${tx.type.toLowerCase()}">
+                            <i class="fas ${getTransactionIcon(tx.type)}"></i>
+                            <span>${getTransactionTypeName(tx.type)}</span>
+                        </div>
+                    </td>
+                    <td class="amount-cell">
+                        <div class="amount ${getAmountClass(tx.type)}">
+                            ${getAmountPrefix(tx.type)}${parseFloat(tx.amount).toFixed(8)}
+                        </div>
+                    </td>
+                    <td class="asset-cell">
+                        <span class="asset-badge ${tx.asset.toLowerCase()}">${tx.asset}</span>
+                    </td>
+                    <td class="status-cell">
+                        <span class="status-badge ${tx.status.toLowerCase()}">
+                            <i class="fas ${getStatusIcon(tx.status)}"></i>
+                            ${getStatusName(tx.status)}
+                        </span>
+                    </td>
+                    <td class="target-cell">
+                        <div class="target-info">
+                            ${getTargetInfo(tx)}
+                        </div>
+                    </td>
+                    <td class="memo-cell">
+                        <div class="memo-text" title="${tx.memo || ''}">
+                            ${tx.memo ? (tx.memo.length > 20 ? tx.memo.substring(0, 20) + '...' : tx.memo) : '-'}
+                        </div>
+                    </td>
+                    <td class="txid-cell">
+                        <div class="txid-text" title="${tx.ref_tx_id || tx.id}">
+                            ${tx.ref_tx_id ? tx.ref_tx_id.substring(0, 8) + '...' : tx.id}
+                        </div>
+                    </td>
+                    <td class="action-cell">
+                        <button class="btn-icon" onclick="event.stopPropagation(); showTransactionDetail(${tx.id})" title="상세 보기">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${tx.ref_tx_id ? `
+                            <button class="btn-icon" onclick="event.stopPropagation(); openBlockchainExplorer('${tx.ref_tx_id}')" title="블록체인 확인">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * 요약 정보 업데이트
+         */
+        function updateSummary() {
+            const income = allTransactions
+                .filter(tx => tx.type === 'TRANSFER_IN' || tx.type === 'DEPOSIT')
+                .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+                
+            const expense = allTransactions
+                .filter(tx => tx.type === 'TRANSFER_OUT' || tx.type === 'WITHDRAWAL')
+                .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+                
+            const pending = allTransactions
+                .filter(tx => tx.status === 'PENDING')
+                .length;
+
+            document.getElementById('totalTransactions').textContent = totalItems.toString();
+            document.getElementById('totalIncome').textContent = `${income.toFixed(8)} USDT`;
+            document.getElementById('totalExpense').textContent = `${expense.toFixed(8)} USDT`;
+            document.getElementById('pendingCount').textContent = pending.toString();
+        }
+
+        /**
+         * 페이지네이션 업데이트
+         */
+        function updatePagination() {
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, totalItems);
+            
+            document.getElementById('paginationInfo').textContent = 
+                `${start}-${end} / ${totalItems}개`;
+
+            // 이전/다음 버튼 상태
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+
+            // 페이지 번호 생성
+            generatePageNumbers();
+        }
+
+        /**
+         * 페이지 번호 생성
+         */
+        function generatePageNumbers() {
+            const container = document.getElementById('pageNumbers');
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            let html = '';
+            
+            if (startPage > 1) {
+                html += `<button class="btn-page-num" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) {
+                    html += `<span class="page-ellipsis">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="btn-page-num ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span class="page-ellipsis">...</span>`;
+                }
+                html += `<button class="btn-page-num" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * 필터 적용
+         */
+        function applyFilters() {
+            currentFilters = {};
+            currentPage = 1;
+
+            // 거래 유형 필터
+            const type = document.getElementById('filterType').value;
+            if (type) currentFilters.transaction_type = type;
+
+            // 자산 필터
+            const asset = document.getElementById('filterAsset').value;
+            if (asset) currentFilters.asset = asset;
+
+            // 상태 필터
+            const status = document.getElementById('filterStatus').value;
+            if (status) currentFilters.status = status;
+
+            // 검색어
+            const search = document.getElementById('filterSearch').value.trim();
+            if (search) currentFilters.search = search;
+
+            // 날짜 범위 필터
+            const dateRange = document.getElementById('filterDateRange').value;
+            if (dateRange) {
+                const now = new Date();
+                let fromDate;
+                
+                switch (dateRange) {
+                    case 'today':
+                        fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'week':
+                        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'month':
+                        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '3months':
+                        fromDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                        break;
+                }
+                
+                if (fromDate) {
+                    currentFilters.from_date = fromDate.toISOString().split('T')[0];
+                }
+            }
+
+            loadTransactions();
+        }
+
+        /**
+         * 필터 초기화
+         */
+        function resetFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterAsset').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterDateRange').value = '';
+            document.getElementById('filterSearch').value = '';
+            
+            currentFilters = {};
+            currentPage = 1;
+            loadTransactions();
+        }
+
+        /**
+         * 페이지 변경
+         */
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                loadTransactions();
+            }
+        }
+
+        /**
+         * 특정 페이지로 이동
+         */
+        function goToPage(page) {
+            if (page >= 1 && page <= totalPages && page !== currentPage) {
+                currentPage = page;
+                loadTransactions();
+            }
+        }
+
+        /**
+         * 페이지 크기 변경
+         */
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSize').value);
+            currentPage = 1;
+            loadTransactions();
+        }
+
+        /**
+         * 테이블 정렬
+         */
+        function sortTable(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'desc';
+            }
+            
+            // 정렬 아이콘 업데이트
+            updateSortIcons();
+            
+            // 로컬 정렬 (서버 정렬이 구현되면 서버에서 처리)
+            allTransactions.sort((a, b) => {
+                let valueA = a[field];
+                let valueB = b[field];
+                
+                if (field === 'amount') {
+                    valueA = parseFloat(valueA);
+                    valueB = parseFloat(valueB);
+                } else if (field === 'created_at') {
+                    valueA = new Date(valueA);
+                    valueB = new Date(valueB);
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return valueA > valueB ? 1 : -1;
+                } else {
+                    return valueA < valueB ? 1 : -1;
+                }
+            });
+            
+            updateTransactionsTable();
+        }
+
+        /**
+         * 정렬 아이콘 업데이트
+         */
+        function updateSortIcons() {
+            document.querySelectorAll('.sortable i').forEach(icon => {
+                icon.className = 'fas fa-sort';
+            });
+            
+            const activeHeader = document.querySelector(`[onclick="sortTable('${currentSort.field}')"] i`);
+            if (activeHeader) {
+                activeHeader.className = currentSort.direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+            }
+        }
+
+        /**
+         * 거래 상세 정보 표시
+         */
+        async function showTransactionDetail(transactionId) {
+            try {
+                const transaction = allTransactions.find(tx => tx.id === transactionId);
+                if (!transaction) {
+                    showAlert('danger', '거래 정보를 찾을 수 없습니다.');
+                    return;
+                }
+
+                const detailContainer = document.getElementById('transactionDetail');
+                detailContainer.innerHTML = generateTransactionDetailHTML(transaction);
+                
+                showModal('transactionDetailModal');
+                
+            } catch (error) {
+                console.error('거래 상세 조회 오류:', error);
+                showAlert('danger', '거래 상세 정보를 불러오는데 실패했습니다.');
+            }
+        }
+
+        /**
+         * 거래 상세 HTML 생성
+         */
+        function generateTransactionDetailHTML(tx) {
+            return `
+                <div class="detail-grid">
+                    <div class="detail-section">
+                        <h4>기본 정보</h4>
+                        <div class="detail-row">
+                            <label>거래 ID:</label>
+                            <span class="detail-value">${tx.id}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>거래 유형:</label>
+                            <span class="detail-value">
+                                <span class="transaction-type ${tx.type.toLowerCase()}">
+                                    <i class="fas ${getTransactionIcon(tx.type)}"></i>
+                                    ${getTransactionTypeName(tx.type)}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <label>금액:</label>
+                            <span class="detail-value amount ${getAmountClass(tx.type)}">
+                                ${getAmountPrefix(tx.type)}${parseFloat(tx.amount).toFixed(8)} ${tx.asset}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <label>상태:</label>
+                            <span class="detail-value">
+                                <span class="status-badge ${tx.status.toLowerCase()}">
+                                    <i class="fas ${getStatusIcon(tx.status)}"></i>
+                                    ${getStatusName(tx.status)}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <label>생성일시:</label>
+                            <span class="detail-value">${formatDateTime(tx.created_at)}</span>
+                        </div>
+                        ${tx.updated_at !== tx.created_at ? `
+                            <div class="detail-row">
+                                <label>수정일시:</label>
+                                <span class="detail-value">${formatDateTime(tx.updated_at)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>거래 상세</h4>
+                        ${tx.related_user_id ? `
+                            <div class="detail-row">
+                                <label>상대방 ID:</label>
+                                <span class="detail-value">${tx.related_user_id}</span>
+                            </div>
+                        ` : ''}
+                        ${tx.memo ? `
+                            <div class="detail-row">
+                                <label>메모:</label>
+                                <span class="detail-value">${tx.memo}</span>
+                            </div>
+                        ` : ''}
+                        ${tx.fee_amount > 0 ? `
+                            <div class="detail-row">
+                                <label>수수료:</label>
+                                <span class="detail-value">${parseFloat(tx.fee_amount).toFixed(8)} ${tx.asset}</span>
+                            </div>
+                        ` : ''}
+                        ${tx.ref_tx_id ? `
+                            <div class="detail-row">
+                                <label>블록체인 TX:</label>
+                                <span class="detail-value">
+                                    <code>${tx.ref_tx_id}</code>
+                                    <button class="btn-icon-sm" onclick="copyToClipboard('${tx.ref_tx_id}')" title="복사">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="btn-icon-sm" onclick="openBlockchainExplorer('${tx.ref_tx_id}')" title="탐색기에서 보기">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * 거래 새로고침
+         */
+        async function refreshTransactions() {
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            await loadTransactions();
+            showAlert('success', '거래 내역이 새로고침되었습니다.');
+            
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+
+        /**
+         * 내보내기 모달 표시
+         */
+        function exportTransactions() {
+            showModal('exportModal');
+        }
+
+        /**
+         * 내보내기 실행
+         */
+        function performExport() {
+            const format = document.getElementById('exportFormat').value;
+            const fromDate = document.getElementById('exportFromDate').value;
+            const toDate = document.getElementById('exportToDate').value;
+            const includeDetails = document.getElementById('includeDetails').checked;
+            const includeFees = document.getElementById('includeFees').checked;
+
+            // 필터된 데이터 준비
+            let exportData = allTransactions;
+            
+            if (fromDate || toDate) {
+                exportData = exportData.filter(tx => {
+                    const txDate = new Date(tx.created_at);
+                    const from = fromDate ? new Date(fromDate) : new Date(0);
+                    const to = toDate ? new Date(toDate + 'T23:59:59') : new Date();
+                    return txDate >= from && txDate <= to;
+                });
+            }
+
+            // 형식에 따른 내보내기
+            switch (format) {
+                case 'csv':
+                    exportToCSV(exportData, includeDetails, includeFees);
+                    break;
+                case 'excel':
+                    exportToExcel(exportData, includeDetails, includeFees);
+                    break;
+                case 'json':
+                    exportToJSON(exportData, includeDetails, includeFees);
+                    break;
+            }
+
+            closeModal('exportModal');
+            showAlert('success', '거래 내역이 내보내기되었습니다.');
+        }
+
+        /**
+         * CSV 내보내기
+         */
+        function exportToCSV(data, includeDetails, includeFees) {
+            const headers = ['날짜', '유형', '금액', '자산', '상태'];
+            if (includeDetails) {
+                headers.push('메모', '거래ID');
+            }
+            if (includeFees) {
+                headers.push('수수료');
+            }
+
+            const csvContent = [
+                headers.join(','),
+                ...data.map(tx => {
+                    const row = [
+                        formatDateTime(tx.created_at),
+                        getTransactionTypeName(tx.type),
+                        parseFloat(tx.amount).toFixed(8),
+                        tx.asset,
+                        getStatusName(tx.status)
+                    ];
+                    if (includeDetails) {
+                        row.push(tx.memo || '', tx.ref_tx_id || tx.id);
+                    }
+                    if (includeFees) {
+                        row.push(parseFloat(tx.fee_amount || 0).toFixed(8));
+                    }
+                    return row.map(field => `"${field}"`).join(',');
+                })
+            ].join('\n');
+
+            downloadFile(csvContent, 'transactions.csv', 'text/csv');
+        }
+
+        /**
+         * JSON 내보내기
+         */
+        function exportToJSON(data, includeDetails, includeFees) {
+            const jsonData = data.map(tx => {
+                const item = {
+                    date: formatDateTime(tx.created_at),
+                    type: getTransactionTypeName(tx.type),
+                    amount: parseFloat(tx.amount).toFixed(8),
+                    asset: tx.asset,
+                    status: getStatusName(tx.status)
+                };
+                
+                if (includeDetails) {
+                    item.memo = tx.memo || '';
+                    item.transaction_id = tx.ref_tx_id || tx.id;
+                }
+                
+                if (includeFees) {
+                    item.fee = parseFloat(tx.fee_amount || 0).toFixed(8);
+                }
+                
+                return item;
+            });
+
+            downloadFile(JSON.stringify(jsonData, null, 2), 'transactions.json', 'application/json');
+        }
+
+        /**
+         * 파일 다운로드
+         */
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }
+
+        /**
+         * 내보내기 기본 날짜 설정
+         */
+        function setDefaultExportDates() {
+            const today = new Date();
+            const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('exportFromDate').value = oneMonthAgo.toISOString().split('T')[0];
+            document.getElementById('exportToDate').value = today.toISOString().split('T')[0];
+        }
+
+        /**
+         * 거래 정보 복사
+         */
+        function copyTransactionInfo() {
+            const detailElement = document.getElementById('transactionDetail');
+            const textContent = detailElement.innerText;
+            
+            navigator.clipboard.writeText(textContent).then(() => {
+                showAlert('success', '거래 정보가 클립보드에 복사되었습니다.');
+            }).catch(() => {
+                showAlert('warning', '복사에 실패했습니다.');
+            });
+        }
+
+        /**
+         * 블록체인 탐색기 열기
+         */
+        function openBlockchainExplorer(txHash) {
+            const url = `https://tronscan.org/#/transaction/${txHash}`;
+            window.open(url, '_blank');
+        }
+
+        /**
+         * 클립보드 복사
+         */
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('success', '클립보드에 복사되었습니다.');
+            }).catch(() => {
+                showAlert('warning', '복사에 실패했습니다.');
+            });
+        }
+
+        /**
+         * 로그아웃
+         */
+        function logout() {
+            if (confirm('로그아웃하시겠습니까?')) {
+                authManager.logout();
+            }
+        }
+
+        // 유틸리티 함수들
+        function getTransactionIcon(type) {
+            const icons = {
+                'TRANSFER_OUT': 'fa-arrow-up',
+                'TRANSFER_IN': 'fa-arrow-down', 
+                'WITHDRAWAL': 'fa-sign-out-alt',
+                'DEPOSIT': 'fa-sign-in-alt'
+            };
+            return icons[type] || 'fa-exchange-alt';
+        }
+
+        function getTransactionTypeName(type) {
+            const names = {
+                'TRANSFER_OUT': '이체 보내기',
+                'TRANSFER_IN': '이체 받기',
+                'WITHDRAWAL': '출금',
+                'DEPOSIT': '입금'
+            };
+            return names[type] || type;
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'PENDING': 'fa-clock',
+                'COMPLETED': 'fa-check',
+                'FAILED': 'fa-times',
+                'CANCELLED': 'fa-ban'
+            };
+            return icons[status] || 'fa-question';
+        }
+
+        function getStatusName(status) {
+            const names = {
+                'PENDING': '대기 중',
+                'COMPLETED': '완료',
+                'FAILED': '실패',
+                'CANCELLED': '취소'
+            };
+            return names[status] || status;
+        }
+
+        function getAmountClass(type) {
+            return (type === 'TRANSFER_IN' || type === 'DEPOSIT') ? 'positive' : 'negative';
+        }
+
+        function getAmountPrefix(type) {
+            return (type === 'TRANSFER_IN' || type === 'DEPOSIT') ? '+' : '-';
+        }
+
+        function getTargetInfo(tx) {
+            if (tx.related_user_id) {
+                return `사용자 #${tx.related_user_id}`;
+            } else if (tx.ref_tx_id) {
+                return `${tx.ref_tx_id.substring(0, 12)}...`;
+            }
+            return '-';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function formatTime(dateString) {
+            return new Date(dateString).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDateTime(dateString) {
+            return new Date(dateString).toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

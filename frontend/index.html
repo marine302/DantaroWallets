@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USDT 지갑 서비스</title>
+    <script>
+        // 자동으로 로그인 페이지로 리다이렉트
+        window.location.href = 'login.html';
+    </script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px;">
+        <p>페이지를 이동 중입니다...</p>
+        <p>자동으로 이동되지 않는다면 <a href="login.html">여기를 클릭하세요</a></p>
+    </div>
+</body>
+</html> class="form-label">
+                            <input type="checkbox" required style="margin-right: 8px;">
+                            <a href="#" style="color: var(--primary-color);">이용약관</a> 및 
+                            <a href="#" style="color: var(--primary-color);">개인정보처리방침</a>에 동의합니다
+                        </label>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary btn-lg"
+                        style="width: 100%;"
+                        data-original-text="회원가입"
+                    >
+                        <i class="fas fa-user-plus"></i>
+                        회원가입
+                    </button>
+                </form>
+
+                <div class="auth-toggle">
+                    <p>이미 계정이 있으신가요? 
+                        <a href="#" class="auth-toggle-btn">로그인</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loading-overlay" class="loading hidden">
+        <div class="spinner"></div>
+        <p>처리 중입니다...</p>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+
+    <script>
+        // 데모 계정 정보 표시
+        document.addEventListener('DOMContentLoaded', () => {
+            // 개발용 데모 정보
+            const demoInfo = document.createElement('div');
+            demoInfo.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                font-size: 12px;
+                z-index: 9999;
+            `;
+            demoInfo.innerHTML = `
+                <strong>🔧 개발용 데모</strong><br>
+                백엔드: http://localhost:8001<br>
+                테스트 계정: admin@example.com / admin123
+            `;
+            document.body.appendChild(demoInfo);
+        });
+    </script>
+</body>
+</html>

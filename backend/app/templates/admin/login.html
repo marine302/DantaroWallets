@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 로그인 - USDT 지갑{% endblock %}
+
+{% block login_content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <h2>관리자 로그인</h2>
+        
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="post" action="/admin/login" data-validate>
+            <div class="mb-3">
+                <label for="email" class="form-label">이메일</label>
+                <input type="email" class="form-control" id="email" name="email" required 
+                       placeholder="관리자 이메일을 입력하세요">
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">비밀번호</label>
+                <input type="password" class="form-control" id="password" name="password" required
+                       placeholder="비밀번호를 입력하세요">
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> 로그인
+                </button>
+            </div>
+        </form>
+        
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i> 
+                관리자 계정이 필요합니다
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}

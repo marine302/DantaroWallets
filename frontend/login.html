@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - USDT 지갑 서비스</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>USDT 지갑</span>
+                </div>
+                <h1>로그인</h1>
+                <p>계정에 로그인하여 지갑을 관리하세요</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail" class="form-label">이메일</label>
+                    <input 
+                        type="email" 
+                        id="loginEmail" 
+                        name="email" 
+                        class="form-input" 
+                        placeholder="이메일을 입력하세요"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword" class="form-label">비밀번호</label>
+                    <input 
+                        type="password" 
+                        id="loginPassword" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="비밀번호를 입력하세요"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkmark"></span>
+                        로그인 상태 유지
+                    </label>
+                </div>
+
+                <button 
+                    type="submit" 
+                    class="btn btn-primary btn-lg"
+                    style="width: 100%;"
+                    data-original-text="로그인"
+                >
+                    <i class="fas fa-sign-in-alt"></i>
+                    로그인
+                </button>
+            </form>
+
+            <div class="auth-toggle">
+                <p>계정이 없으신가요? 
+                    <a href="signup.html" class="auth-toggle-btn">회원가입</a>
+                </p>
+                <p>
+                    <a href="#" class="forgot-password">비밀번호를 잊으셨나요?</a>
+                </p>
+            </div>
+
+            <!-- 데모 정보 -->
+            <div class="demo-info">
+                <h3><i class="fas fa-info-circle"></i> 데모 계정</h3>
+                <p><strong>이메일:</strong> test@example.com</p>
+                <p><strong>비밀번호:</strong> Test123456</p>
+                <small>테스트용으로 미리 생성된 계정입니다.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 모달 -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content notification-modal">
+            <div class="notification-header">
+                <i id="notificationIcon" class="fas fa-info-circle"></i>
+                <h3 id="notificationTitle">알림</h3>
+            </div>
+            <div class="notification-body">
+                <p id="notificationMessage">알림 메시지가 여기에 표시됩니다.</p>
+            </div>
+            <div class="notification-footer">
+                <button id="notificationOkBtn" class="btn btn-primary">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 모듈 -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 인증 모듈 초기화
+            Auth.initLoginForm();
+            
+            // 메인 앱 초기화
+            App.init();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}출금 승인 - USDT 지갑{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-money-bill-wave"></i> 출금 승인</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            {% set pending_count = withdrawals|selectattr("status.value", "equalto", "pending")|list|length %}
+            <span class="badge bg-warning">대기 중 {{ pending_count }}건</span>
+        </div>
+    </div>
+</div>
+
+{% if withdrawals %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>사용자</th>
+                        <th>대상 주소</th>
+                        <th>금액</th>
+                        <th>수수료</th>
+                        <th>상태</th>
+                        <th>요청일</th>
+                        <th>액션</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for withdrawal in withdrawals %}
+                    <tr class="{% if withdrawal.status.value == 'pending' %}table-warning{% endif %}">
+                        <td>{{ withdrawal.id }}</td>
+                        <td>
+                            <i class="fas fa-user"></i> {{ withdrawal.user.email if withdrawal.user else 'N/A' }}
+                        </td>
+                        <td>
+                            <code class="small">{{ withdrawal.destination_address[:10] }}...{{ withdrawal.destination_address[-6:] }}</code>
+                        </td>
+                        <td>
+                            <strong>{{ "%.8f"|format(withdrawal.amount|float) }} USDT</strong>
+                        </td>
+                        <td>
+                            {{ "%.8f"|format((withdrawal.amount|float * 0.005)) }} USDT
+                        </td>
+                        <td>
+                            {% if withdrawal.status.value == 'pending' %}
+                                <span class="badge bg-warning">대기</span>
+                            {% elif withdrawal.status.value == 'approved' %}
+                                <span class="badge bg-info">승인됨</span>
+                            {% elif withdrawal.status.value == 'completed' %}
+                                <span class="badge bg-success">완료</span>
+                            {% elif withdrawal.status.value == 'rejected' %}
+                                <span class="badge bg-danger">거부됨</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if withdrawal.status.value == 'pending' %}
+                            <div class="btn-group btn-group-sm" role="group">
+                                <form method="post" action="/admin/withdrawals/{{ withdrawal.id }}/approve" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('이 출금 요청을 승인하시겠습니까?')">
+                                        <i class="fas fa-check"></i> 승인
+                                    </button>
+                                </form>
+                                <form method="post" action="/admin/withdrawals/{{ withdrawal.id }}/reject" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('이 출금 요청을 거부하시겠습니까?')">
+                                        <i class="fas fa-times"></i> 거부
+                                    </button>
+                                </form>
+                            </div>
+                            {% elif withdrawal.transaction_id %}
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="viewTxDetails('{{ withdrawal.transaction_id }}')">
+                                <i class="fas fa-eye"></i> 상세
+                            </button>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center">
+        <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">출금 요청이 없습니다</h5>
+        <p class="text-muted">아직 처리할 출금 요청이 없습니다.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- 출금 상세 정보 모달 -->
+<div class="modal fade" id="withdrawalDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">출금 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="withdrawalDetailsContent">
+                <!-- 출금 정보가 여기에 로드됩니다 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 통계 카드 -->
+<div class="row mt-4">
+    {% set total_amount = withdrawals|sum(attribute='amount')|float %}
+    {% set completed_count = withdrawals|selectattr("status.value", "equalto", "completed")|list|length %}
+    {% set rejected_count = withdrawals|selectattr("status.value", "equalto", "rejected")|list|length %}
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">총 요청</h5>
+                <h3 class="text-primary">{{ withdrawals|length }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">대기 중</h5>
+                <h3 class="text-warning">{{ pending_count }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">완료</h5>
+                <h3 class="text-success">{{ completed_count }}</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">거부됨</h5>
+                <h3 class="text-danger">{{ rejected_count }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewTxDetails(txId) {
+    // API 호출로 트랜잭션 상세 정보를 가져와서 모달에 표시
+    fetch(`/api/v1/admin/transactions/${txId}`)
+        .then(response => response.json())
+        .then(data => {
+            const content = `
+                <div class="row">
+                    <div class="col-12">
+                        <h6>트랜잭션 정보</h6>
+                        <p><strong>ID:</strong> ${data.id}</p>
+                        <p><strong>해시:</strong> <code>${data.ref_tx_id || 'N/A'}</code></p>
+                        <p><strong>금액:</strong> ${data.amount} USDT</p>
+                        <p><strong>상태:</strong> ${data.status}</p>
+                        <p><strong>생성일:</strong> ${new Date(data.created_at).toLocaleString('ko-KR')}</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('withdrawalDetailsContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('withdrawalDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('트랜잭션 정보를 가져오는 중 오류가 발생했습니다.');
+        });
+}
+</script>
+{% endblock %}

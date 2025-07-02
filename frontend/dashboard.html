@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대시보드 - USDT 지갑 서비스</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-wallet"></i>
+            <span>USDT 지갑</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-link active">
+                <i class="fas fa-tachometer-alt"></i>
+                대시보드
+            </a>
+            <a href="wallet.html" class="nav-link">
+                <i class="fas fa-wallet"></i>
+                지갑
+            </a>
+            <a href="history.html" class="nav-link">
+                <i class="fas fa-history"></i>
+                거래내역
+            </a>
+        </div>
+        <div class="nav-user">
+            <div class="user-info">
+                <span id="userEmail">사용자</span>
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    로그아웃
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 메인 컨테이너 -->
+    <div class="main-container">
+        <!-- 알림 메시지 -->
+        <div id="alert-container"></div>
+
+        <!-- 대시보드 헤더 -->
+        <div class="dashboard-header">
+            <h1>대시보드</h1>
+            <p>계정 개요 및 최근 활동을 확인하세요</p>
+        </div>
+
+        <!-- 잔액 카드 -->
+        <div class="dashboard-cards">
+            <div class="balance-card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fas fa-coins"></i>
+                        총 잔액
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="balance-item">
+                        <div class="balance-info">
+                            <span class="asset-name">USDT</span>
+                            <span class="asset-symbol">TRC20</span>
+                        </div>
+                        <div class="balance-amount">
+                            <span id="usdtBalance">0.00000000</span>
+                            <span class="currency">USDT</span>
+                        </div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-info">
+                            <span class="asset-name">TRX</span>
+                            <span class="asset-symbol">네이티브</span>
+                        </div>
+                        <div class="balance-amount">
+                            <span id="trxBalance">0.00000000</span>
+                            <span class="currency">TRX</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a href="wallet.html" class="btn btn-primary">
+                        <i class="fas fa-wallet"></i>
+                        지갑 관리
+                    </a>
+                </div>
+            </div>
+
+            <!-- 빠른 액션 카드 -->
+            <div class="quick-actions-card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fas fa-bolt"></i>
+                        빠른 작업
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="action-grid">
+                        <button class="action-btn" onclick="showTransferModal()">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>이체하기</span>
+                        </button>
+                        <button class="action-btn" onclick="showWithdrawModal()">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>출금하기</span>
+                        </button>
+                        <button class="action-btn" onclick="showDepositModal()">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>입금하기</span>
+                        </button>
+                        <a href="history.html" class="action-btn">
+                            <i class="fas fa-history"></i>
+                            <span>거래내역</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 최근 거래 카드 -->
+            <div class="recent-transactions-card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fas fa-clock"></i>
+                        최근 거래
+                    </h3>
+                    <a href="history.html" class="view-all">전체보기</a>
+                </div>
+                <div class="card-body">
+                    <div id="recentTransactions" class="transaction-list">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>거래 내역을 불러오는 중...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 이체 모달 -->
+    <div id="transferModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>내부 이체</h3>
+                <button class="modal-close" onclick="closeModal('transferModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="transferForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="transferToEmail" class="form-label">받는 사람 이메일</label>
+                        <input 
+                            type="email" 
+                            id="transferToEmail" 
+                            name="toEmail" 
+                            class="form-input" 
+                            placeholder="받는 사람의 이메일을 입력하세요"
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="transferAmount" class="form-label">금액 (USDT)</label>
+                        <input 
+                            type="number" 
+                            id="transferAmount" 
+                            name="amount" 
+                            class="form-input" 
+                            placeholder="0.00000000"
+                            step="0.00000001"
+                            min="0.00000001"
+                            required
+                        >
+                        <small class="form-help">사용 가능한 잔액: <span id="availableBalance">0.00000000 USDT</span></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="transferMemo" class="form-label">메모 (선택사항)</label>
+                        <input 
+                            type="text" 
+                            id="transferMemo" 
+                            name="memo" 
+                            class="form-input" 
+                            placeholder="이체 메모를 입력하세요"
+                        >
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('transferModal')">
+                        취소
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">이체하기</span>
+                        <i class="fas fa-spinner fa-spin btn-loading" style="display: none;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 출금 모달 -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>USDT 출금</h3>
+                <button class="modal-close" onclick="closeModal('withdrawModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="withdrawForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="withdrawAddress" class="form-label">출금 주소 (TRON)</label>
+                        <input 
+                            type="text" 
+                            id="withdrawAddress" 
+                            name="address" 
+                            class="form-input" 
+                            placeholder="TRON 주소를 입력하세요 (T...)"
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="withdrawAmount" class="form-label">출금 금액 (USDT)</label>
+                        <input 
+                            type="number" 
+                            id="withdrawAmount" 
+                            name="amount" 
+                            class="form-input" 
+                            placeholder="0.00000000"
+                            step="0.00000001"
+                            min="10"
+                            required
+                        >
+                        <small class="form-help">최소 출금: 10 USDT | 수수료: 0.5%</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="withdrawMemo" class="form-label">메모 (선택사항)</label>
+                        <input 
+                            type="text" 
+                            id="withdrawMemo" 
+                            name="memo" 
+                            class="form-input" 
+                            placeholder="출금 메모를 입력하세요"
+                        >
+                    </div>
+                    <div class="fee-info">
+                        <div class="fee-row">
+                            <span>출금 금액:</span>
+                            <span id="withdrawAmountDisplay">0.00000000 USDT</span>
+                        </div>
+                        <div class="fee-row">
+                            <span>수수료 (0.5%):</span>
+                            <span id="withdrawFeeDisplay">0.00000000 USDT</span>
+                        </div>
+                        <div class="fee-row total">
+                            <span>실제 받을 금액:</span>
+                            <span id="withdrawFinalDisplay">0.00000000 USDT</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('withdrawModal')">
+                        취소
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <span class="btn-text">출금 신청</span>
+                        <i class="fas fa-spinner fa-spin btn-loading" style="display: none;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 입금 모달 -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>USDT 입금</h3>
+                <button class="modal-close" onclick="closeModal('depositModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="deposit-info">
+                    <p>아래 주소로 USDT (TRC20)를 전송하세요:</p>
+                    
+                    <div class="address-section">
+                        <label class="form-label">입금 주소</label>
+                        <div class="address-display">
+                            <input 
+                                type="text" 
+                                id="depositAddress" 
+                                class="form-input" 
+                                readonly
+                                placeholder="주소를 불러오는 중..."
+                            >
+                            <button type="button" class="btn-copy" onclick="copyToClipboard('depositAddress')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="memo-section">
+                        <label class="form-label">입금 식별 메모 (필수)</label>
+                        <div class="address-display">
+                            <input 
+                                type="text" 
+                                id="depositMemo" 
+                                class="form-input" 
+                                readonly
+                                placeholder="메모를 불러오는 중..."
+                            >
+                            <button type="button" class="btn-copy" onclick="copyToClipboard('depositMemo')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="form-help text-warning">
+                            ⚠️ 메모를 반드시 포함하여 전송하세요. 메모 없이 전송 시 입금이 처리되지 않습니다.
+                        </small>
+                    </div>
+
+                    <div class="qr-section">
+                        <label class="form-label">QR 코드</label>
+                        <div id="depositQRCode" class="qr-code-container">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>QR 코드 생성 중...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deposit-notes">
+                        <h4>입금 안내</h4>
+                        <ul>
+                            <li>USDT (TRC20) 네트워크로만 전송하세요</li>
+                            <li>메모를 반드시 포함하여 전송하세요</li>
+                            <li>최소 입금 금액: 1 USDT</li>
+                            <li>입금 완료까지 약 3-10분 소요됩니다</li>
+                            <li>다른 토큰을 전송하면 복구할 수 없습니다</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('depositModal')">
+                    닫기
+                </button>
+                <button type="button" class="btn btn-primary" onclick="refreshDepositAddress()">
+                    <i class="fas fa-sync-alt"></i>
+                    주소 새로고침
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // 페이지 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 인증 확인
+            if (!authManager.checkAuth()) {
+                return;
+            }
+            
+            // 대시보드 초기화
+            initializeDashboard();
+        });
+
+        /**
+         * 대시보드 초기화
+         */
+        function initializeDashboard() {
+            // 사용자 정보 표시
+            const userEmail = walletAPI.getUserEmail();
+            if (userEmail) {
+                document.getElementById('userEmail').textContent = userEmail;
+            }
+
+            // 잔액 로드
+            loadDashboardBalance();
+            
+            // 최근 거래 로드
+            loadRecentTransactions();
+            
+            // 모달 이벤트 등록
+            setupModalEvents();
+        }
+
+        /**
+         * 대시보드 잔액 로드
+         */
+        async function loadDashboardBalance() {
+            try {
+                const balances = await walletAPI.getBalance();
+                
+                // USDT 잔액 업데이트
+                const usdtBalance = balances.find(b => b.asset === 'USDT');
+                if (usdtBalance) {
+                    document.getElementById('usdtBalance').textContent = parseFloat(usdtBalance.amount).toFixed(8);
+                    document.getElementById('availableBalance').textContent = `${parseFloat(usdtBalance.amount).toFixed(8)} USDT`;
+                }
+                
+                // TRX 잔액 업데이트
+                const trxBalance = balances.find(b => b.asset === 'TRX');
+                if (trxBalance) {
+                    document.getElementById('trxBalance').textContent = parseFloat(trxBalance.amount).toFixed(8);
+                }
+                
+            } catch (error) {
+                console.error('잔액 로드 오류:', error);
+                showAlert('danger', '잔액 정보를 불러오는데 실패했습니다.');
+            }
+        }
+
+        /**
+         * 최근 거래 로드
+         */
+        async function loadRecentTransactions() {
+            const container = document.getElementById('recentTransactions');
+            
+            try {
+                const response = await walletAPI.getTransactions({ limit: 5 });
+                const transactions = response.transactions || [];
+                
+                if (transactions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>최근 거래 내역이 없습니다</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = transactions.map(tx => `
+                    <div class="transaction-item">
+                        <div class="transaction-icon ${tx.type}">
+                            <i class="fas ${getTransactionIcon(tx.type)}"></i>
+                        </div>
+                        <div class="transaction-info">
+                            <div class="transaction-type">${getTransactionTypeName(tx.type)}</div>
+                            <div class="transaction-time">${formatDateTime(tx.created_at)}</div>
+                        </div>
+                        <div class="transaction-amount ${tx.type}">
+                            ${tx.type === 'TRANSFER_IN' || tx.type === 'DEPOSIT' ? '+' : '-'}${parseFloat(tx.amount).toFixed(8)} ${tx.asset}
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('최근 거래 로드 오류:', error);
+                container.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>거래 내역을 불러오는데 실패했습니다</p>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * 모달 이벤트 설정
+         */
+        function setupModalEvents() {
+            // 이체 폼
+            document.getElementById('transferForm').addEventListener('submit', handleTransfer);
+            
+            // 출금 폼
+            document.getElementById('withdrawForm').addEventListener('submit', handleWithdraw);
+            
+            // 출금 금액 변경 시 수수료 계산
+            document.getElementById('withdrawAmount').addEventListener('input', calculateWithdrawFee);
+        }
+
+        /**
+         * 이체 처리
+         */
+        async function handleTransfer(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const toEmail = formData.get('toEmail');
+            const amount = parseFloat(formData.get('amount'));
+            const memo = formData.get('memo') || '';
+
+            if (amount <= 0) {
+                showAlert('danger', '올바른 금액을 입력해주세요.');
+                return;
+            }
+
+            setFormLoading(form, true);
+            
+            try {
+                await walletAPI.transfer(toEmail, amount, 'USDT', memo);
+                showAlert('success', '이체가 완료되었습니다!');
+                closeModal('transferModal');
+                form.reset();
+                
+                // 잔액 새로고침
+                setTimeout(() => {
+                    loadDashboardBalance();
+                    loadRecentTransactions();
+                }, 1000);
+                
+            } catch (error) {
+                showAlert('danger', error.message || '이체에 실패했습니다.');
+            } finally {
+                setFormLoading(form, false);
+            }
+        }
+
+        /**
+         * 출금 처리
+         */
+        async function handleWithdraw(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const address = formData.get('address');
+            const amount = parseFloat(formData.get('amount'));
+            const memo = formData.get('memo') || '';
+
+            if (!validateTronAddress(address)) {
+                showAlert('danger', '올바른 트론 주소를 입력해주세요.');
+                return;
+            }
+
+            if (amount < 10) {
+                showAlert('danger', '최소 출금 금액은 10 USDT입니다.');
+                return;
+            }
+
+            const fee = amount * 0.005;
+            const finalAmount = amount - fee;
+            
+            if (!confirm(`출금 신청하시겠습니까?\n\n금액: ${amount} USDT\n수수료: ${fee.toFixed(8)} USDT\n실제 받을 금액: ${finalAmount.toFixed(8)} USDT`)) {
+                return;
+            }
+
+            setFormLoading(form, true);
+            
+            try {
+                await walletAPI.withdraw(address, amount, 'USDT', memo);
+                showAlert('success', '출금 신청이 완료되었습니다. 관리자 승인 후 처리됩니다.');
+                closeModal('withdrawModal');
+                form.reset();
+                
+                // 잔액 새로고침
+                setTimeout(() => {
+                    loadDashboardBalance();
+                    loadRecentTransactions();
+                }, 1000);
+                
+            } catch (error) {
+                showAlert('danger', error.message || '출금 신청에 실패했습니다.');
+            } finally {
+                setFormLoading(form, false);
+            }
+        }
+
+        /**
+         * 출금 수수료 계산
+         */
+        function calculateWithdrawFee() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const fee = amount * 0.005;
+            const finalAmount = amount - fee;
+            
+            document.getElementById('withdrawAmountDisplay').textContent = `${amount.toFixed(8)} USDT`;
+            document.getElementById('withdrawFeeDisplay').textContent = `${fee.toFixed(8)} USDT`;
+            document.getElementById('withdrawFinalDisplay').textContent = `${finalAmount.toFixed(8)} USDT`;
+        }
+
+        /**
+         * 모달 표시
+         */
+        function showTransferModal() {
+            loadDashboardBalance(); // 사용 가능한 잔액 업데이트
+            showModal('transferModal');
+        }
+
+        function showWithdrawModal() {
+            showModal('withdrawModal');
+        }
+
+        async function showDepositModal() {
+            showModal('depositModal');
+            await loadDepositAddress();
+        }
+
+        /**
+         * 입금 주소 로드
+         */
+        async function loadDepositAddress() {
+            const addressInput = document.getElementById('depositAddress');
+            const memoInput = document.getElementById('depositMemo');
+            const qrContainer = document.getElementById('depositQRCode');
+            
+            try {
+                const response = await walletAPI.getDepositAddress('USDT');
+                
+                addressInput.value = response.address;
+                memoInput.value = response.memo;
+                
+                // QR 코드 생성 (간단한 텍스트로 대체)
+                qrContainer.innerHTML = `
+                    <div class="qr-placeholder">
+                        <i class="fas fa-qrcode"></i>
+                        <p>QR 코드 생성<br>주소: ${response.address}<br>메모: ${response.memo}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('입금 주소 로드 오류:', error);
+                addressInput.value = '주소 로드 실패';
+                memoInput.value = '메모 로드 실패';
+                qrContainer.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>주소를 불러오는데 실패했습니다</p>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * 입금 주소 새로고침
+         */
+        async function refreshDepositAddress() {
+            await loadDepositAddress();
+            showAlert('info', '입금 주소가 새로고침되었습니다.');
+        }
+
+        /**
+         * 클립보드 복사
+         */
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            element.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showAlert('success', '클립보드에 복사되었습니다.');
+        }
+
+        /**
+         * 로그아웃
+         */
+        function logout() {
+            if (confirm('로그아웃하시겠습니까?')) {
+                authManager.logout();
+            }
+        }
+
+        // 유틸리티 함수들 (main.js에서 공통으로 사용)
+        function getTransactionIcon(type) {
+            const icons = {
+                'TRANSFER_OUT': 'fa-arrow-up',
+                'TRANSFER_IN': 'fa-arrow-down', 
+                'WITHDRAWAL': 'fa-sign-out-alt',
+                'DEPOSIT': 'fa-sign-in-alt'
+            };
+            return icons[type] || 'fa-exchange-alt';
+        }
+
+        function getTransactionTypeName(type) {
+            const names = {
+                'TRANSFER_OUT': '이체 보내기',
+                'TRANSFER_IN': '이체 받기',
+                'WITHDRAWAL': '출금',
+                'DEPOSIT': '입금'
+            };
+            return names[type] || type;
+        }
+
+        function validateTronAddress(address) {
+            return /^T[A-Za-z1-9]{33}$/.test(address);
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 대시보드 - USDT 지갑{% endblock %}
+
+{% block page_title %}관리자 대시보드{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">대시보드</li>
+{% endblock %}
+
+{% block content %}
+<!-- 상태 표시 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <span class="badge badge-success">
+            <i class="fas fa-check-circle"></i> 시스템 운영 중
+        </span>
+        <span class="badge badge-secondary ms-2">
+            <i class="fas fa-clock"></i> 최종 업데이트: {{ current_time.strftime('%Y-%m-%d %H:%M') }}
+        </span>
+    </div>
+    <button class="btn btn-outline-primary" onclick="location.reload()">
+        <i class="fas fa-sync-alt"></i> 새로고침
+    </button>
+</div>
+
+<!-- 통계 카드들 -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-icon text-primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="stat-number">{{ total_users }}</h3>
+            <p class="stat-label">총 사용자</p>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-icon text-success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <h3 class="stat-number">{{ active_users }}</h3>
+            <p class="stat-label">활성 사용자</p>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-icon text-warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h3 class="stat-number">{{ pending_withdrawals }}</h3>
+            <p class="stat-label">대기 중인 출금</p>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-icon text-info">
+                <i class="fas fa-coins"></i>
+            </div>
+            <h3 class="stat-number">{{ format_usdt(total_balance) }}</h3>
+            <p class="stat-label">총 잔액 (USDT)</p>
+        </div>
+    </div>
+</div>
+
+<!-- 최근 거래 내역 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> 최근 거래 내역</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th data-sort="0">ID</th>
+                                <th data-sort="1">사용자</th>
+                                <th data-sort="2">유형</th>
+                                <th data-sort="3">금액</th>
+                                <th data-sort="4">상태</th>
+                                <th data-sort="5">생성일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in recent_transactions %}
+                            <tr>
+                                <td data-value="id">{{ tx.id }}</td>
+                                <td data-value="user">{{ tx.user.email if tx.user else 'N/A' }}</td>
+                                <td data-value="type">
+                                    {% if tx.type.value == 'deposit' %}
+                                        <span class="badge badge-success">입금</span>
+                                    {% elif tx.type.value == 'withdrawal' %}
+                                        <span class="badge badge-danger">출금</span>
+                                    {% elif tx.type.value == 'transfer' %}
+                                        <span class="badge badge-info">이체</span>
+                                    {% endif %}
+                                </td>
+                                <td data-value="amount">{{ "%.8f"|format(tx.amount|float) }} USDT</td>
+                                <td data-value="status">
+                                    {% if tx.status.value == 'pending' %}
+                                        <span class="badge badge-warning">대기</span>
+                                    {% elif tx.status.value == 'completed' %}
+                                        <span class="badge badge-success">완료</span>
+                                    {% elif tx.status.value == 'failed' %}
+                                        <span class="badge badge-danger">실패</span>
+                                    {% endif %}
+                                </td>
+                                <td data-value="created_at">{{ tx.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                    <p class="mb-0">최근 거래 내역이 없습니다.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 빠른 액션 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> 빠른 액션</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="/admin/users" class="btn btn-outline-primary w-100 h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-users fa-2x d-block mb-2"></i>
+                                <span>사용자 관리</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="/admin/withdrawals" class="btn btn-outline-warning w-100 h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-money-bill-wave fa-2x d-block mb-2"></i>
+                                <span>출금 승인</span>
+                                {% if pending_withdrawals > 0 %}
+                                <span class="badge badge-warning ms-1">{{ pending_withdrawals }}</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="/docs" target="_blank" class="btn btn-outline-info w-100 h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-book fa-2x d-block mb-2"></i>
+                                <span>API 문서</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <button onclick="location.reload()" class="btn btn-outline-secondary w-100 h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-sync-alt fa-2x d-block mb-2"></i>
+                                <span>새로고침</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 시스템 정보 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> 시스템 정보</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <p><strong>서버 시간:</strong> {{ current_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        <p><strong>네트워크:</strong> <span class="badge badge-info">Tron Testnet</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>API 버전:</strong> v1.0.0</p>
+                        <p><strong>상태:</strong> <span class="badge badge-success">운영 중</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>마지막 업데이트:</strong> {{ current_time.strftime('%H:%M:%S') }}</p>
+                        <p><strong>관리자:</strong> {{ current_user.email }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
